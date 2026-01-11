@@ -12,6 +12,12 @@
 - Hover states
 - Automatic line wrapping (`WrapLayout`)
 
+![selected](screenshots/selected.png)
+
+![focused](screenshots/focused.png)
+
+![hovered](screenshots/hovered.png)
+
 
 ## Installation (Swift Package Manager)
 
