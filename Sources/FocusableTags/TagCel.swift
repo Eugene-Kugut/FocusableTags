@@ -1,0 +1,46 @@
+import SwiftUI
+
+/// Internal tag cell. Not a `Button` to avoid stealing the key-view loop.
+struct TagCell<Label: View>: View {
+    let label: () -> Label
+
+    let isEnabled: Bool
+    let isSelected: Bool
+    let isFocused: Bool
+
+    let backgroundColor: (_ isSelected: Bool, _ isFocused: Bool, _ isHovered: Bool) -> Color
+    let focusedOverlay: Color
+    let cornerRadius: CGFloat
+    let onClick: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        label()
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .onHover { isHovered = $0 }
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(backgroundColor(isSelected, isFocused, isHovered))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(
+                        isFocused ? focusedOverlay : Color.clear,
+                        lineWidth: 1.5
+                    )
+            }
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .animation(.easeOut(duration: 0.12), value: isHovered)
+            .opacity(isEnabled ? 1.0 : 0.45)
+            .onTapGesture {
+                guard isEnabled else { return }
+                onClick()
+            }
+            .accessibilityElement()
+            .accessibilityAddTraits(.isButton)
+    }
+}
