@@ -13,9 +13,9 @@
 - Automatic line wrapping (`WrapLayout`)
 
 <p float="left">
-  <img src="screenshots/selected.png" width="350" />
-  <img src="screenshots/focused.png" width="350" />
-  <img src="screenshots/hovered.png" width="350" />
+  <img src="screenshots/selected.png" width="500" />
+  <img src="screenshots/focused.png" width="500" />
+  <img src="screenshots/hovered.png" width="500" />
 </p>
 
 ## Installation (Swift Package Manager)
