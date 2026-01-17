@@ -94,7 +94,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
                     Spacer(minLength: 0)
                 }
             })
-            .padding(.horizontal, 10)
 
             TagsKeyHost(
                 isFocused: $isKeyHostFocused,
