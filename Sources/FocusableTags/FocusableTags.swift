@@ -200,6 +200,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             backgroundColor: tagBackgroundColor(isSelected:isFocused:isHovered:),
             focusedOverlay: focusedOverlay,
             focusedOverlayLineWidth: focusedOverlayLineWidth,
+            selectedOverlayColor: selectedOverlayColor,
             overlayColor: overlayColor,
             overlayLineWidth: overlayLineWidth,
             contentInsets: contentInsets,
