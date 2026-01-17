@@ -6,16 +6,13 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
 
     public struct Item: Identifiable {
         public var id: ID
-        public var isEnabled: Bool
         public var label: () -> Label
 
         public init(
             _ id: ID,
-            isEnabled: Bool = true,
             @ViewBuilder label: @escaping () -> Label
         ) {
             self.id = id
-            self.isEnabled = isEnabled
             self.label = label
         }
     }
@@ -194,7 +191,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
 
         return TagCell(
             label: item.label,
-            isEnabled: item.isEnabled,
             isSelected: isSelected,
             isFocused: isFocused,
             selectedBackground: selectedBackground,
@@ -208,8 +204,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             contentInsets: contentInsets,
             cornerRadius: cornerRadius,
             onClick: {
-                guard item.isEnabled else { return }
-
                 toggleSelection(item.id)
 
                 anchorTagID = item.id
@@ -245,59 +239,36 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         return nil
     }
 
-    private func isEnabled(_ id: ID) -> Bool {
-        items.first(where: { $0.id == id })?.isEnabled == true
-    }
+    private func firstID() -> ID? { items.first?.id }
+    private func lastID() -> ID? { items.last?.id }
 
-    private func firstEnabledID() -> ID? {
-        items.first(where: { $0.isEnabled })?.id
-    }
-
-    private func lastEnabledID() -> ID? {
-        items.last(where: { $0.isEnabled })?.id
-    }
-
-    private func nextEnabled(after id: ID) -> ID? {
+    private func next(after id: ID) -> ID? {
         let ids = items.map(\.id)
         guard let index = ids.firstIndex(of: id) else { return nil }
         guard index + 1 < ids.count else { return nil }
-
-        for index in (index + 1)..<ids.count {
-            let candidate = ids[index]
-            if isEnabled(candidate) { return candidate }
-        }
-        return nil
+        return ids[index + 1]
     }
 
-    private func previousEnabled(before id: ID) -> ID? {
+    private func previous(before id: ID) -> ID? {
         let ids = items.map(\.id)
         guard let index = ids.firstIndex(of: id) else { return nil }
         guard index - 1 >= 0 else { return nil }
-
-        for index in stride(from: index - 1, through: 0, by: -1) {
-            let candidate = ids[index]
-            if isEnabled(candidate) { return candidate }
-        }
-        return nil
+        return ids[index - 1]
     }
 
     private func focusOnEntry(_ direction: TagMoveDirection) -> Bool {
-        if let anchor = anchorTagID, !isEnabled(anchor) {
-            anchorTagID = nil
-        }
-
         let targetID: ID? = {
             if let anchor = anchorTagID {
                 switch direction {
                 case .next:
-                    return nextEnabled(after: anchor) ?? firstEnabledID()
+                    return next(after: anchor) ?? firstID()
                 case .previous:
-                    return previousEnabled(before: anchor) ?? lastEnabledID()
+                    return previous(before: anchor) ?? lastID()
                 }
             } else {
                 switch direction {
-                case .next: return firstEnabledID()
-                case .previous: return lastEnabledID()
+                case .next: return firstID()
+                case .previous: return lastID()
                 }
             }
         }()
@@ -319,11 +290,11 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             if let id = anchorTagID { return id }
             if let id = lastSelection { return id }
             if let id = currentSelectionAnchor() { return id }
-            return firstEnabledID() ?? ids.first!
+            return ids.first!
         }()
 
         guard let currentIndex = ids.firstIndex(of: currentID) else {
-            if let first = firstEnabledID() {
+            if let first = ids.first {
                 focusedTagID = first
                 anchorTagID = first
                 return true
@@ -339,49 +310,33 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
                 }
             }
 
-            var newIndex = nextIndex(currentIndex)
-            for _ in 0..<ids.count {
-                let candidate = ids[newIndex]
-                if isEnabled(candidate) {
-                    focusedTagID = candidate
-                    anchorTagID = candidate
-                    return true
-                }
-                newIndex = nextIndex(newIndex)
-            }
-            return false
+            let newIndex = nextIndex(currentIndex)
+            let candidate = ids[newIndex]
+            focusedTagID = candidate
+            anchorTagID = candidate
+            return true
         }
 
         switch direction {
         case .next:
             guard currentIndex + 1 < ids.count else { return false }
-            for index in (currentIndex + 1)..<ids.count {
-                let candidate = ids[index]
-                if isEnabled(candidate) {
-                    focusedTagID = candidate
-                    anchorTagID = candidate
-                    return true
-                }
-            }
-            return false
+            let candidate = ids[currentIndex + 1]
+            focusedTagID = candidate
+            anchorTagID = candidate
+            return true
 
         case .previous:
             guard currentIndex - 1 >= 0 else { return false }
-            for index in stride(from: currentIndex - 1, through: 0, by: -1) {
-                let candidate = ids[index]
-                if isEnabled(candidate) {
-                    focusedTagID = candidate
-                    anchorTagID = candidate
-                    return true
-                }
-            }
-            return false
+            let candidate = ids[currentIndex - 1]
+            focusedTagID = candidate
+            anchorTagID = candidate
+            return true
         }
     }
 
     private func activateFocused() {
         let id: ID? = focusedTagID ?? anchorTagID ?? lastSelection ?? currentSelectionAnchor()
-        guard let id, isEnabled(id) else { return }
+        guard let id else { return }
 
         toggleSelection(id)
 

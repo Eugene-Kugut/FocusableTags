@@ -2,15 +2,16 @@
 
 **FocusableTags** is a SwiftUI control for macOS that provides keyboard-focusable tags with full AppKit key-view loop integration and **multi-selection** support.
 
-- Multiple selection (`Set<ID>`)
-- Full keyboard navigation:
-  - `Tab` / `Shift+Tab` — enter / leave the control
-  - `←` `→` — cyclic navigation between tags
-  - `Space` / `Enter` — toggle selection
-- Proper **AppKit key-view loop** behavior
-- Correct focus handling on mouse interaction
-- Hover states
-- Automatic line wrapping (`WrapLayout`)
+- FocusableTags is a keyboard-driven tag list for macOS SwiftUI with a “keyboard focus only” behavior.
+- Layout: tags are arranged in a wrapping (multi-line) layout and can be aligned leading / center / trailing.
+- Selection: supports multi-selection (Binding<Set<ID>>). Clicking a tag toggles its selection.
+- Focus model: visual focus appears only after keyboard interaction (Tab / Ctrl+Tab / arrow keys). Mouse clicks do not show the keyboard focus ring.
+- Entering focus (Tab): when FocusableTags becomes the first responder via Tab traversal, it chooses a reasonable starting tag (anchor / last selection / first enabled) and highlights it.
+- Ctrl+Tab navigation: Ctrl+Tab / Ctrl+Shift+Tab moves focus between tags (wraps around), without leaving the control.
+- Arrow navigation: Left / Right moves focus to previous / next enabled tag. If there is no next/previous tag, focus does not wrap.
+- Activate: Space / Return / Enter toggles selection for the currently focused tag.
+- Outside click: clicking anywhere outside the control clears focus (and hides keyboard focus).
+
 
 <p float="left">
   <img src="screenshots/selected.png" width="500" />
@@ -26,9 +27,6 @@ File → Add Packages Dependencies… → https://github.com/Eugene-Kugut/Focusa
 ## Usage
 
 ```swift
-import SwiftUI
-import FocusableTags
-
 enum DemoTag: String, CaseIterable, Hashable {
     case swift = "Swift"
     case kotlin = "Kotlin"
@@ -65,7 +63,7 @@ struct DemoView: View {
             selection: $selection,
             selectedBackground: .indigo,
             focusedBackground: Color.accentColor.opacity(0.2),
-            hoveredBackground: Color.white.opacity(0.1),
+            hoveredBackground: Color(NSColor.secondarySystemFill).opacity(0.8),
             selectedOverlayColor: .primary.opacity(0.2),
             overlayColor: .primary.opacity(0.1),
             overlayLineWidth: 1,

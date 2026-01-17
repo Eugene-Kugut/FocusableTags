@@ -1,9 +1,9 @@
+// TagCell.swift
 import SwiftUI
 
 struct TagCell<Label: View>: View {
     let label: () -> Label
 
-    let isEnabled: Bool
     let isSelected: Bool
     let isFocused: Bool
 
@@ -22,12 +22,6 @@ struct TagCell<Label: View>: View {
 
     @State private var isHovered = false
 
-    private func backgroundColor(isFocused: Bool, isHovered: Bool) -> Color {
-        if isFocused { return focusedBackground }
-        if isHovered { return hoveredBackground }
-        return .clear
-    }
-
     var body: some View {
         label()
             .opacity(isFocused && isSelected ? 0.95 : 1)
@@ -41,7 +35,11 @@ struct TagCell<Label: View>: View {
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(backgroundColor(isFocused: isFocused, isHovered: isHovered))
+                    .fill(isFocused ? focusedBackground : .clear)
+            }
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(isHovered ? hoveredBackground : .clear)
             }
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -55,13 +53,10 @@ struct TagCell<Label: View>: View {
                     )
             }
             .animation(.easeOut(duration: 0.12), value: isHovered)
-//            .opacity(isEnabled ? 1.0 : 0.45)
             .onTapGesture {
-                guard isEnabled else { return }
                 onClick()
             }
             .accessibilityElement()
             .accessibilityAddTraits(.isButton)
     }
 }
-
