@@ -52,20 +52,24 @@ struct DemoView: View {
                         HStack(spacing: 8, content: {
                             Image(systemName: "plus")
                                 .font(.body)
-                                .fontWeight(.medium)
+                                .fontWeight(selection.contains(tag) ? .bold : .medium)
+                                .foregroundStyle(selection.contains(tag) ? .white.opacity(0.8) : .accentColor)
                                 .rotationEffect(.degrees(selection.contains(tag) ? 45 : 0))
                                 .animation(.snappy(duration: 0.3), value: selection)
                             Text(tag.rawValue)
                                 .font(.body)
-                                .foregroundStyle(selection.contains(tag) ? .primary : .secondary)
+                                .foregroundStyle(selection.contains(tag) ? .white : .primary)
                         })
                     }
             },
             selection: $selection,
-            overlayColor: .primary.opacity(0.3),
+            selectedBackground: .accentColor,
+            overlayColor: .accentColor,
             horizontalSpacing: 4,
             verticalSpacing: 4
         )
+        .padding(.horizontal)
+        .padding(.vertical)
     }
 }
 
@@ -77,12 +81,17 @@ struct DemoView: View {
 FocusableTags(
     items: items,
     selection: $selection,
-    selectedBackground: Color.primary.opacity(0.12),
-    focusedBackground: Color.accentColor.opacity(0.15),
-    focusedOverlay: Color.accentColor,
+    selectedBackground: Color.primary.opacity(0.10),
+    focusedBackground: Color.accentColor.opacity(0.12),
     hoveredBackground: Color.primary.opacity(0.06),
-    spacing: 4,
-    cornerRadius: 10,
-    alignment: HorizontalAlignment = .center
+    focusedOverlay: Color.accentColor.opacity(0.9),
+    focusedOverlayLineWidth: 1.5,
+    overlayColor: .clear,
+    overlayLineWidth: 1 / 3,
+    contentInsets: NSEdgeInsets(top: 6, left: 12, bottom: 6, right: 12),
+    horizontalSpacing: 4,
+    verticalSpacing: 4,
+    cornerRadius: 8,
+    alignment: .leading
 )
 ```

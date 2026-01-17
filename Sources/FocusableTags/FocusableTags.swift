@@ -32,6 +32,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
     public let verticalSpacing: CGFloat
     public let cornerRadius: CGFloat
     public let alignment: HorizontalAlignment
+    public let contentInsets: NSEdgeInsets
 
     @Binding public var selection: Set<ID>
 
@@ -40,11 +41,12 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         selection: Binding<Set<ID>>,
         selectedBackground: Color = Color.primary.opacity(0.10),
         focusedBackground: Color = Color.accentColor.opacity(0.12),
+        hoveredBackground: Color = Color.primary.opacity(0.06),
         focusedOverlay: Color = Color.accentColor.opacity(0.9),
         focusedOverlayLineWidth: CGFloat = 1.5,
         overlayColor: Color = .clear,
         overlayLineWidth: CGFloat = 1 / 3,
-        hoveredBackground: Color = Color.primary.opacity(0.06),
+        contentInsets: NSEdgeInsets = .init(top: 6, left: 12, bottom: 6, right: 12),
         horizontalSpacing: CGFloat = 4,
         verticalSpacing: CGFloat = 4,
         cornerRadius: CGFloat = 8,
@@ -61,6 +63,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         self.overlayLineWidth = overlayLineWidth
         self.horizontalSpacing = horizontalSpacing
         self.verticalSpacing = verticalSpacing
+        self.contentInsets = contentInsets
         self.cornerRadius = cornerRadius
         self.alignment = alignment
     }
@@ -196,6 +199,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             focusedOverlayLineWidth: focusedOverlayLineWidth,
             overlayColor: overlayColor,
             overlayLineWidth: overlayLineWidth,
+            contentInsets: contentInsets,
             cornerRadius: cornerRadius,
             onClick: {
                 guard item.isEnabled else { return }

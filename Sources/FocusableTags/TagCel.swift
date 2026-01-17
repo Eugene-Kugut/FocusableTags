@@ -12,6 +12,7 @@ struct TagCell<Label: View>: View {
     let focusedOverlayLineWidth: CGFloat
     let overlayColor: Color
     let overlayLineWidth: CGFloat
+    let contentInsets: NSEdgeInsets
     let cornerRadius: CGFloat
     let onClick: () -> Void
 
@@ -20,8 +21,10 @@ struct TagCell<Label: View>: View {
     var body: some View {
         label()
             .lineLimit(1)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.top, contentInsets.top)
+            .padding(.bottom, contentInsets.bottom)
+            .padding(.leading, contentInsets.left)
+            .padding(.trailing, contentInsets.right)
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
             .background {
