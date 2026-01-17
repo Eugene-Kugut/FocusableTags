@@ -32,7 +32,6 @@ struct OutsideClickMonitor: NSViewRepresentable {
         override func viewWillMove(toWindow newWindow: NSWindow?) {
             super.viewWillMove(toWindow: newWindow)
 
-            // когда уходим из окна — снимаем монитор на MainActor, пока self ещё жив
             if newWindow == nil {
                 removeMonitorIfNeeded()
             }

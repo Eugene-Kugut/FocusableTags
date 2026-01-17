@@ -10,15 +10,17 @@ struct TagsKeyHost: NSViewRepresentable {
     let onMove: (TagMoveDirection, _ wrapping: Bool) -> Bool
     let onActivate: () -> Void
 
-    /// Called ONLY when focus enters via Tag traversal (Tab / Shift+Tab).
     let onFocusInByTagTraversal: (TagMoveDirection) -> Bool
-
     let onFocusOut: () -> Void
+
+    let hostID: UUID
+    let onBecameActiveHost: () -> Void
 
     func makeNSView(context: Context) -> TagsKeyHostView {
         let view = TagsKeyHostView()
         view.focusRingType = .none
 
+        view.hostID = hostID
         applyCallbacks(to: view)
         view.lastClearToken = clearExternalFocusToken
 
@@ -26,9 +28,9 @@ struct TagsKeyHost: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: TagsKeyHostView, context: Context) {
+        nsView.hostID = hostID
         applyCallbacks(to: nsView)
 
-        // 1) Clear external firstResponder when token changed
         if nsView.lastClearToken != clearExternalFocusToken {
             nsView.lastClearToken = clearExternalFocusToken
             DispatchQueue.main.async {
@@ -39,13 +41,22 @@ struct TagsKeyHost: NSViewRepresentable {
             }
         }
 
-        // 2) Host focus management
         DispatchQueue.main.async {
             guard let window = nsView.window else { return }
 
+            let isActiveHost = MainActor.assumeIsolated {
+                FocusableTagsFocusCoordinator.shared.activeHostID == hostID
+            }
+
             if isFocused {
-                if window.firstResponder !== nsView {
-                    window.makeFirstResponder(nsView)
+                if isActiveHost {
+                    if window.firstResponder !== nsView {
+                        window.makeFirstResponder(nsView)
+                    }
+                } else {
+                    if window.firstResponder === nsView {
+                        window.makeFirstResponder(nil)
+                    }
                 }
             } else {
                 if window.firstResponder === nsView {
@@ -59,6 +70,7 @@ struct TagsKeyHost: NSViewRepresentable {
         view.onMove = onMove
         view.onActivate = onActivate
         view.onKeyboardInteraction = onKeyboardInteraction
+        view.onBecameActiveHost = onBecameActiveHost
 
         view.onFocusChange = { focused in
             DispatchQueue.main.async {

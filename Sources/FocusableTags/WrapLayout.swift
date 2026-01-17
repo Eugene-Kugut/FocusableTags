@@ -1,10 +1,9 @@
 import SwiftUI
 
 struct WrapLayout: Layout {
-    let spacing: CGFloat
+    let horizontalSpacing: CGFloat
+    let verticalSpacing: CGFloat
     let alignment: HorizontalAlignment
-
-    // MARK: - Layout
 
     func sizeThatFits(
         proposal: ProposedViewSize,
@@ -20,12 +19,9 @@ struct WrapLayout: Layout {
         for (i, row) in rows.enumerated() {
             maxRowWidth = max(maxRowWidth, row.width)
             totalHeight += row.height
-            if i != rows.count - 1 { totalHeight += spacing }
+            if i != rows.count - 1 { totalHeight += verticalSpacing }
         }
 
-        // Если proposal.width задан — обычно логично "занять" его,
-        // но сам Layout может вернуть и контентную ширину.
-        // Оставим контентную ширину (как у тебя было).
         return CGSize(width: maxRowWidth, height: totalHeight)
     }
 
@@ -64,14 +60,12 @@ struct WrapLayout: Layout {
                     anchor: .topLeading,
                     proposal: ProposedViewSize(width: size.width, height: size.height)
                 )
-                x += size.width + spacing
+                x += size.width + horizontalSpacing
             }
 
-            y += row.height + spacing
+            y += row.height + verticalSpacing
         }
     }
-
-    // MARK: - Row building
 
     private struct RowItem {
         let subview: Subviews.Element
@@ -80,7 +74,7 @@ struct WrapLayout: Layout {
 
     private struct Row {
         var items: [RowItem] = []
-        var width: CGFloat = 0      // точная ширина строки (без "лишнего" spacing в конце)
+        var width: CGFloat = 0
         var height: CGFloat = 0
     }
 
@@ -100,13 +94,11 @@ struct WrapLayout: Layout {
         }
 
         for subview in subviews {
-            // ВАЖНО: меряем без "максимальной ширины строки" внутри каждого subview,
-            // чтобы не раздувать размеры (особенно Text).
             let size = subview.sizeThatFits(ProposedViewSize(width: nil, height: proposal.height))
 
             let proposedWidthForAppend: CGFloat = current.items.isEmpty
                 ? size.width
-                : current.width + spacing + size.width
+                : current.width + horizontalSpacing + size.width
 
             if proposedWidthForAppend > maxWidth, !current.items.isEmpty {
                 commitRowIfNeeded()
@@ -118,7 +110,7 @@ struct WrapLayout: Layout {
                 current.height = size.height
             } else {
                 current.items.append(.init(subview: subview, size: size))
-                current.width += spacing + size.width
+                current.width += horizontalSpacing + size.width
                 current.height = max(current.height, size.height)
             }
         }

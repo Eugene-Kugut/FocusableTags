@@ -1,10 +1,8 @@
 import SwiftUI
 import AppKit
+import Combine
 
-/// Keyboard-focusable horizontal tags (macOS).
 public struct FocusableTags<ID: Hashable, Label: View>: View {
-
-    // MARK: - Item
 
     public struct Item: Identifiable {
         public var id: ID
@@ -22,14 +20,16 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         }
     }
 
-    // MARK: - Public API
-
     public let items: [Item]
     public let selectedBackground: Color
     public let focusedBackground: Color
     public let focusedOverlay: Color
+    public let focusedOverlayLineWidth: CGFloat
+    public let overlayColor: Color
+    public let overlayLineWidth: CGFloat
     public let hoveredBackground: Color
-    public let spacing: CGFloat
+    public let horizontalSpacing: CGFloat
+    public let verticalSpacing: CGFloat
     public let cornerRadius: CGFloat
     public let alignment: HorizontalAlignment
 
@@ -41,8 +41,12 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         selectedBackground: Color = Color.primary.opacity(0.10),
         focusedBackground: Color = Color.accentColor.opacity(0.12),
         focusedOverlay: Color = Color.accentColor.opacity(0.9),
+        focusedOverlayLineWidth: CGFloat = 1.5,
+        overlayColor: Color = .clear,
+        overlayLineWidth: CGFloat = 1 / 3,
         hoveredBackground: Color = Color.primary.opacity(0.06),
-        spacing: CGFloat = 2,
+        horizontalSpacing: CGFloat = 4,
+        verticalSpacing: CGFloat = 4,
         cornerRadius: CGFloat = 8,
         alignment: HorizontalAlignment = .leading
     ) {
@@ -52,29 +56,26 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         self.focusedBackground = focusedBackground
         self.hoveredBackground = hoveredBackground
         self.focusedOverlay = focusedOverlay
-        self.spacing = spacing
+        self.focusedOverlayLineWidth = focusedOverlayLineWidth
+        self.overlayColor = overlayColor
+        self.overlayLineWidth = overlayLineWidth
+        self.horizontalSpacing = horizontalSpacing
+        self.verticalSpacing = verticalSpacing
         self.cornerRadius = cornerRadius
         self.alignment = alignment
     }
 
-    // MARK: - Focus state (internal)
+    private final class HostIdentity: ObservableObject {
+        let id = UUID()
+    }
 
-    /// True when the key-host NSView is firstResponder.
+    @StateObject private var identity = HostIdentity()
+
     @State private var isKeyHostFocused = false
-
-    /// Focus highlight for tag navigation (our own visual focus).
     @State private var focusedTagID: ID?
-
-    /// Show focus highlight only after keyboard interaction.
     @State private var showsKeyboardFocus = false
-
-    /// Anchor tag used when user re-enters by Tag traversal.
     @State private var anchorTagID: ID?
-
-    /// Trigger to clear external firstResponder (TextField, etc.).
     @State private var clearExternalFocusToken = UUID()
-
-    /// Last selected (most recently interacted) tag, used for keyboard anchoring.
     @State private var lastSelection: ID?
 
     public var body: some View {
@@ -83,7 +84,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
                 if alignment == .center || alignment == .trailing {
                     Spacer(minLength: 0)
                 }
-                WrapLayout(spacing: spacing, alignment: alignment) {
+                WrapLayout(horizontalSpacing: horizontalSpacing, verticalSpacing: verticalSpacing, alignment: alignment) {
                     ForEach(items) { item in
                         tagCell(for: item)
                             .id(item.id)
@@ -94,13 +95,15 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
                 }
             })
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
 
             TagsKeyHost(
                 isFocused: $isKeyHostFocused,
                 clearExternalFocusToken: clearExternalFocusToken,
                 onKeyboardInteraction: {
                     showsKeyboardFocus = true
+                    MainActor.assumeIsolated {
+                        FocusableTagsFocusCoordinator.shared.activeHostID = identity.id
+                    }
                 },
                 onMove: { direction, wrapping in
                     moveFocus(direction, wrapping: wrapping)
@@ -114,6 +117,12 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
                     focusedTagID = nil
                     showsKeyboardFocus = false
                     anchorTagID = nil
+                },
+                hostID: identity.id,
+                onBecameActiveHost: {
+                    MainActor.assumeIsolated {
+                        FocusableTagsFocusCoordinator.shared.activeHostID = identity.id
+                    }
                 }
             )
             .frame(width: 1, height: 1)
@@ -131,10 +140,14 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             .allowsHitTesting(false)
         )
         .onTapGesture {
-            // Click on the strip (not on a tag):
             focusedTagID = nil
             anchorTagID = nil
             showsKeyboardFocus = false
+
+            MainActor.assumeIsolated {
+                FocusableTagsFocusCoordinator.shared.activeHostID = identity.id
+            }
+
             isKeyHostFocused = true
             clearExternalFocusToken = UUID()
         }
@@ -142,12 +155,18 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             focusedTagID = nil
             anchorTagID = nil
             showsKeyboardFocus = false
-
-            // Prime lastSelection from current selection (stable by items order).
             lastSelection = currentSelectionAnchor()
         }
+        .onReceive(NotificationCenter.default.publisher(for: FocusableTagsFocusNotifications.activeHostDidChange)) { note in
+            let active = note.userInfo?[FocusableTagsFocusNotifications.activeHostIDKey] as? UUID
+            if active != identity.id, isKeyHostFocused {
+                anchorTagID = nil
+                focusedTagID = nil
+                showsKeyboardFocus = false
+                isKeyHostFocused = false
+            }
+        }
         .onChange(of: selection) { _, _ in
-            // Keep lastSelection stable/valid.
             if let last = lastSelection, selection.contains(last) == false {
                 lastSelection = currentSelectionAnchor()
             } else if lastSelection == nil {
@@ -164,8 +183,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         }
     }
 
-    // MARK: - UI
-
     private func tagCell(for item: Item) -> some View {
         let isSelected = selection.contains(item.id)
         let isFocused = showsKeyboardFocus && isKeyHostFocused && item.id == focusedTagID
@@ -177,16 +194,22 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             isFocused: isFocused,
             backgroundColor: tagBackgroundColor(isSelected:isFocused:isHovered:),
             focusedOverlay: focusedOverlay,
+            focusedOverlayLineWidth: focusedOverlayLineWidth,
+            overlayColor: overlayColor,
+            overlayLineWidth: overlayLineWidth,
             cornerRadius: cornerRadius,
             onClick: {
                 guard item.isEnabled else { return }
 
-                // Mouse: toggle selection
                 toggleSelection(item.id)
 
                 anchorTagID = item.id
                 focusedTagID = nil
                 showsKeyboardFocus = false
+
+                MainActor.assumeIsolated {
+                    FocusableTagsFocusCoordinator.shared.activeHostID = identity.id
+                }
 
                 isKeyHostFocused = true
                 clearExternalFocusToken = UUID()
@@ -201,8 +224,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         return .clear
     }
 
-    // MARK: - Selection helpers
-
     private func toggleSelection(_ id: ID) {
         if selection.contains(id) {
             selection.remove(id)
@@ -215,15 +236,12 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         }
     }
 
-    /// Returns a stable "first selected" according to items order (not Set order).
     private func currentSelectionAnchor() -> ID? {
         for item in items where selection.contains(item.id) {
             return item.id
         }
         return nil
     }
-
-    // MARK: - Focus helpers
 
     private func isEnabled(_ id: ID) -> Bool {
         items.first(where: { $0.id == id })?.isEnabled == true
@@ -261,7 +279,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         return nil
     }
 
-    /// Enter focus into tags ONLY via Tag traversal.
     private func focusOnEntry(_ direction: TagMoveDirection) -> Bool {
         if let anchor = anchorTagID, !isEnabled(anchor) {
             anchorTagID = nil
@@ -289,17 +306,12 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         return true
     }
 
-    // MARK: - Move / Activate
-
-    /// wrapping=true  — cyclic (arrows)
-    /// wrapping=false — no wrap (Tab/Shift+Tab to allow leaving control)
     @discardableResult
     private func moveFocus(_ direction: TagMoveDirection, wrapping: Bool) -> Bool {
         guard !items.isEmpty else { return false }
 
         let ids = items.map(\.id)
 
-        // Prefer focused/anchor, then lastSelection, then first selected, then first enabled.
         let currentID: ID = {
             if let id = focusedTagID { return id }
             if let id = anchorTagID { return id }
@@ -320,10 +332,8 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         if wrapping {
             func nextIndex(_ index: Int) -> Int {
                 switch direction {
-                case .next:
-                    return (index + 1) % ids.count
-                case .previous:
-                    return (index - 1 + ids.count) % ids.count
+                case .next: return (index + 1) % ids.count
+                case .previous: return (index - 1 + ids.count) % ids.count
                 }
             }
 
@@ -368,7 +378,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
     }
 
     private func activateFocused() {
-        // Space/Return toggles selection on the focused (or anchored) tag.
         let id: ID? = focusedTagID ?? anchorTagID ?? lastSelection ?? currentSelectionAnchor()
         guard let id, isEnabled(id) else { return }
 
@@ -378,6 +387,11 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         anchorTagID = id
 
         showsKeyboardFocus = true
+
+        MainActor.assumeIsolated {
+            FocusableTagsFocusCoordinator.shared.activeHostID = identity.id
+        }
+
         isKeyHostFocused = true
     }
 }

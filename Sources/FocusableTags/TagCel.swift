@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// Internal tag cell. Not a `Button` to avoid stealing the key-view loop.
 struct TagCell<Label: View>: View {
     let label: () -> Label
 
@@ -10,6 +9,9 @@ struct TagCell<Label: View>: View {
 
     let backgroundColor: (_ isSelected: Bool, _ isFocused: Bool, _ isHovered: Bool) -> Color
     let focusedOverlay: Color
+    let focusedOverlayLineWidth: CGFloat
+    let overlayColor: Color
+    let overlayLineWidth: CGFloat
     let cornerRadius: CGFloat
     let onClick: () -> Void
 
@@ -29,8 +31,8 @@ struct TagCell<Label: View>: View {
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(
-                        isFocused ? focusedOverlay : Color.clear,
-                        lineWidth: 1.5
+                        isFocused ? focusedOverlay : overlayColor,
+                        lineWidth: isFocused ? focusedOverlayLineWidth : overlayLineWidth
                     )
             }
             .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -44,3 +46,4 @@ struct TagCell<Label: View>: View {
             .accessibilityAddTraits(.isButton)
     }
 }
+
