@@ -7,7 +7,10 @@ struct TagCell<Label: View>: View {
     let isSelected: Bool
     let isFocused: Bool
 
-    let backgroundColor: (_ isSelected: Bool, _ isFocused: Bool, _ isHovered: Bool) -> Color
+    let selectedBackground: Color
+    let focusedBackground: Color
+    let hoveredBackground: Color
+
     let focusedOverlay: Color
     let focusedOverlayLineWidth: CGFloat
     let selectedOverlayColor: Color
@@ -19,8 +22,15 @@ struct TagCell<Label: View>: View {
 
     @State private var isHovered = false
 
+    private func backgroundColor(isFocused: Bool, isHovered: Bool) -> Color {
+        if isFocused { return focusedBackground }
+        if isHovered { return hoveredBackground }
+        return .clear
+    }
+
     var body: some View {
         label()
+            .opacity(isFocused && isSelected ? 0.95 : 1)
             .lineLimit(1)
             .padding(.top, contentInsets.top)
             .padding(.bottom, contentInsets.bottom)
@@ -28,9 +38,14 @@ struct TagCell<Label: View>: View {
             .padding(.trailing, contentInsets.right)
             .contentShape(Rectangle())
             .onHover { isHovered = $0 }
+            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(backgroundColor(isSelected, isFocused, isHovered))
+                    .fill(backgroundColor(isFocused: isFocused, isHovered: isHovered))
+            }
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(isSelected ? selectedBackground : .clear)
             }
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -39,9 +54,8 @@ struct TagCell<Label: View>: View {
                         lineWidth: isFocused ? focusedOverlayLineWidth : overlayLineWidth
                     )
             }
-            .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .animation(.easeOut(duration: 0.12), value: isHovered)
-            .opacity(isEnabled ? 1.0 : 0.45)
+//            .opacity(isEnabled ? 1.0 : 0.45)
             .onTapGesture {
                 guard isEnabled else { return }
                 onClick()

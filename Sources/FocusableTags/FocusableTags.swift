@@ -197,7 +197,9 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
             isEnabled: item.isEnabled,
             isSelected: isSelected,
             isFocused: isFocused,
-            backgroundColor: tagBackgroundColor(isSelected:isFocused:isHovered:),
+            selectedBackground: selectedBackground,
+            focusedBackground: focusedBackground,
+            hoveredBackground: hoveredBackground,
             focusedOverlay: focusedOverlay,
             focusedOverlayLineWidth: focusedOverlayLineWidth,
             selectedOverlayColor: selectedOverlayColor,
@@ -222,13 +224,6 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
                 clearExternalFocusToken = UUID()
             }
         )
-    }
-
-    private func tagBackgroundColor(isSelected: Bool, isFocused: Bool, isHovered: Bool) -> Color {
-        if isSelected { return selectedBackground }
-        if isFocused { return focusedBackground }
-        if isHovered { return hoveredBackground }
-        return .clear
     }
 
     private func toggleSelection(_ id: ID) {

@@ -50,23 +50,27 @@ struct DemoView: View {
             items: DemoTag.allCases.map { tag in
                     .init(tag) {
                         HStack(spacing: 8, content: {
-                            Image(systemName: "plus")
-                                .font(.body)
-                                .fontWeight(selection.contains(tag) ? .bold : .medium)
-                                .foregroundStyle(selection.contains(tag) ? .white.opacity(0.8) : .accentColor)
-                                .rotationEffect(.degrees(selection.contains(tag) ? 45 : 0))
-                                .animation(.snappy(duration: 0.3), value: selection)
                             Text(tag.rawValue)
                                 .font(.body)
                                 .foregroundStyle(selection.contains(tag) ? .white : .primary)
+                            Image(systemName: "plus")
+                                .font(.body)
+                                .fontWeight(selection.contains(tag) ? .medium : .medium)
+                                .foregroundStyle(selection.contains(tag) ? Color.white : Color.accentColor)
+                                .rotationEffect(.degrees(selection.contains(tag) ? 45 : 0))
+                                .animation(.snappy(duration: 0.3), value: selection)
                         })
                     }
             },
             selection: $selection,
-            selectedBackground: .accentColor,
-            overlayColor: .accentColor,
-            horizontalSpacing: 4,
-            verticalSpacing: 4
+            selectedBackground: .indigo,
+            focusedBackground: Color.accentColor.opacity(0.2),
+            hoveredBackground: Color.white.opacity(0.1),
+            selectedOverlayColor: .primary.opacity(0.2),
+            overlayColor: .primary.opacity(0.1),
+            overlayLineWidth: 1,
+            horizontalSpacing: 6,
+            verticalSpacing: 4,
         )
         .padding(.horizontal)
         .padding(.vertical)
