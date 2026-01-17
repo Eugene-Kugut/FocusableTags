@@ -10,6 +10,7 @@ struct TagCell<Label: View>: View {
     let backgroundColor: (_ isSelected: Bool, _ isFocused: Bool, _ isHovered: Bool) -> Color
     let focusedOverlay: Color
     let focusedOverlayLineWidth: CGFloat
+    let selectedOverlayColor: Color
     let overlayColor: Color
     let overlayLineWidth: CGFloat
     let contentInsets: NSEdgeInsets
@@ -34,7 +35,7 @@ struct TagCell<Label: View>: View {
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(
-                        isFocused ? focusedOverlay : overlayColor,
+                        isFocused ? focusedOverlay : (isSelected ? selectedOverlayColor : overlayColor),
                         lineWidth: isFocused ? focusedOverlayLineWidth : overlayLineWidth
                     )
             }

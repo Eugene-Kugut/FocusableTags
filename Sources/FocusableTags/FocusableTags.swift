@@ -25,6 +25,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
     public let focusedBackground: Color
     public let focusedOverlay: Color
     public let focusedOverlayLineWidth: CGFloat
+    public let selectedOverlayColor: Color
     public let overlayColor: Color
     public let overlayLineWidth: CGFloat
     public let hoveredBackground: Color
@@ -44,8 +45,9 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         hoveredBackground: Color = Color.primary.opacity(0.06),
         focusedOverlay: Color = Color.accentColor.opacity(0.9),
         focusedOverlayLineWidth: CGFloat = 1.5,
+        selectedOverlayColor: Color = .clear,
         overlayColor: Color = .clear,
-        overlayLineWidth: CGFloat = 1 / 3,
+        overlayLineWidth: CGFloat = 1,
         contentInsets: NSEdgeInsets = .init(top: 6, left: 12, bottom: 6, right: 12),
         horizontalSpacing: CGFloat = 4,
         verticalSpacing: CGFloat = 4,
@@ -58,6 +60,7 @@ public struct FocusableTags<ID: Hashable, Label: View>: View {
         self.focusedBackground = focusedBackground
         self.hoveredBackground = hoveredBackground
         self.focusedOverlay = focusedOverlay
+        self.selectedOverlayColor = selectedOverlayColor
         self.focusedOverlayLineWidth = focusedOverlayLineWidth
         self.overlayColor = overlayColor
         self.overlayLineWidth = overlayLineWidth
